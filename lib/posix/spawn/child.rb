@@ -1,3 +1,5 @@
+require "open3"
+
 module POSIX
   module Spawn
     # POSIX::Spawn::Child includes logic for executing child processes and
@@ -42,11 +44,6 @@ module POSIX
     # Q: Why use POSIX::Spawn::Child instead of popen3, hand rolled fork/exec
     # code, or Process::spawn?
     #
-    # - It's more efficient than popen3 and provides meaningful process
-    #   hierarchies because it performs a single fork/exec. (popen3 double forks
-    #   to avoid needing to collect the exit status and also calls
-    #   Process::detach which creates a Ruby Thread!!!!).
-    #
     # - It handles all max pipe buffer (PIPE_BUF) hang cases when reading and
     #   writing semi-large amounts of data. This is non-trivial to implement
     #   correctly and must be accounted for with popen3, spawn, or hand rolled
@@ -56,9 +53,17 @@ module POSIX
     #   fork(2) and exec aren't available on all platforms. In those cases,
     #   POSIX::Spawn::Child falls back to using whatever janky substitutes
     #   the platform provides.
-    class Child
-      include POSIX::Spawn
 
+    ##
+    # Exception raised when the total number of bytes output on the command's
+    # stderr and stdout streams exceeds the maximum output size (:max option).
+    class MaximumOutputExceeded < StandardError
+    end
+
+    # Exception raised when timeout is exceeded.
+    class TimeoutExceeded < StandardError
+    end
+    class Child
       # Spawn a new process, write all input and read all output, and wait for
       # the program to exit. Supports the standard spawn interface as described
       # in the POSIX::Spawn module documentation:
@@ -159,15 +164,14 @@ module POSIX
       # immediately when a new instance of this object is created, or
       # can be called explicitly when creating the Child via `build`.
       def exec!
-        # spawn the process and hook up the pipes
-        pid, stdin, stdout, stderr = popen4(@env, *(@argv + [@options]))
-        @pid = pid
+        stdin, stdout, stderr, wait_thread = Open3.popen3(@env, *(@argv + [@options]))
+        @pid = wait_thread[:pid]
 
         # async read from all streams into buffers
         read_and_write(@input, stdin, stdout, stderr, @timeout, @max)
 
-        # grab exit status
-        @status = waitpid(pid)
+        # wait_thr.value waits for the termination of the process and returns exit status
+        @status = wait_thread.value
       rescue Object
         [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
         if @status.nil?
@@ -176,7 +180,7 @@ module POSIX
           else
             ::Process.kill('-TERM', pid) rescue nil
           end
-          @status = waitpid(pid) rescue nil
+          @status = wait_thread.value rescue nil
         end
         raise
       ensure
@@ -278,14 +282,6 @@ module POSIX
         end
 
         [@out, @err]
-      end
-
-      # Wait for the child process to exit
-      #
-      # Returns the Process::Status object obtained by reaping the process.
-      def waitpid(pid)
-        ::Process::waitpid(pid)
-        $?
       end
     end
   end
