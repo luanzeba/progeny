@@ -83,7 +83,19 @@ module POSIX
       # executed to completion. The out, err, and status attributes are
       # immediately available.
       def initialize(*args)
-        @env, @argv, options = extract_process_spawn_arguments(*args)
+        if args.last.is_a?(Hash)
+          options = args.pop.dup
+        else
+          options = {}
+        end
+
+        if args.first.is_a?(Hash)
+          @env = args.shift
+        else
+          @env = {}
+        end
+        @env.merge!(options.delete(:env)) if options.key?(:env)
+        @argv = args
         @options = options.dup
         @input = @options.delete(:input)
         @timeout = @options.delete(:timeout)
