@@ -115,8 +115,8 @@ module Progeny
     # Returns a new Command instance but does not run the underlying process.
     def self.build(*args)
       options =
-        if args[-1].respond_to?(:to_hash)
-          args.pop.to_hash
+        if args.last.is_a?(Hash)
+          args.pop.dup
         else
           {}
         end
