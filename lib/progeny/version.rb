@@ -1,3 +1,3 @@
 module Progeny
-  VERSION = '0.3.15'
+  VERSION = '0.1.0'
 end

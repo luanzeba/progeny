@@ -1,0 +1,12 @@
+## [Unreleased]
+
+## [0.1.0] - 2023-05-03
+
+- Initial release. Forked `posix-spawn` gem.
+
+### Changed
+
+- `Progeny::Command#new` and `Progeny::Command#build` only take actual `Hash`
+  objects as the `options` argument. We will not call `#to_hash` on the object
+  like `POSIX::Spawn::Child` did.
+
