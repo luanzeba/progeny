@@ -9,8 +9,3 @@ Rake::TestTask.new(:test) do |t|
   t.libs << "lib"
   t.test_files = FileList["test/**/test_*.rb"]
 end
-
-desc 'Run some benchmarks'
-task :benchmark => :build do
-  ruby '-Ilib', 'bin/posix-spawn-benchmark'
-end
