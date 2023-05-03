@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
-  spec.metadata["changelog_uri"] = spec.homepage + "/blob/master/CHANGELOG.md"
+  spec.metadata["changelog_uri"] = spec.homepage + "/blob/main/CHANGELOG.md"
 
   # Specify which files should be added to the gem when it is released.
   spec.files = %w[lib/progeny.rb lib/progeny/command.rb lib/progeny/version.rb README.md CHANGELOG.md LICENSE.txt]
