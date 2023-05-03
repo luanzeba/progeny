@@ -1,5 +1,6 @@
 Copyright (c) 2011 by Ryan Tomayko <r@tomayko.com>
                   and Aman Gupta <aman@tmm1.net>
+Copyright (c) 2023 by Luan Vieira <luanv@me.com>
 
 Permission  is  hereby granted, free of charge, to any person ob-
 taining a copy of  this  software  and  associated  documentation
