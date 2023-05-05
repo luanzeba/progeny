@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.2.0] - 2023-05-05
+
+### Added
+
+- `Progeny::Command#spawn_with_pipes` for easier migration from `posix-spawn`.
+
 ## [0.1.0] - 2023-05-03
 
 - Initial release. Forked `posix-spawn` gem.

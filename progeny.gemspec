@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ["Luan Vieira"]
   spec.email = ["luanv@me.com"]
 
-  spec.summary = "A popen3 wrapper with a nice interface and extra options."
+  spec.summary = "A process spawn wrapper with a nice interface and extra options."
   spec.description = "Spawn child processes without managing IO streams, zombie processes and other details."
   spec.homepage = "https://github.com/luanzeba/progeny"
   spec.license = "MIT"

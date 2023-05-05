@@ -219,6 +219,29 @@ class CommandTest < Minitest::Test
     assert p.success?
   end
 
+  def test_spawn_with_pipes
+    pid, i, o, e = Progeny::Command.spawn_with_pipes("cat")
+    i.write "hello world"
+    i.close
+    Process.waitpid(pid)
+    assert_equal "hello world", o.read
+    assert_equal 0, $?.exitstatus
+  ensure
+    [i, o, e].each{ |io| io.close rescue nil }
+  end
+
+  def test_spawn_with_pipes_and_options
+    pid, i, o, e = Progeny::Command.spawn_with_pipes("cat", pgroup: true)
+    i.write "hello world"
+    assert_equal pid, Process.getpgid(pid)
+    i.close
+    Process.waitpid(pid)
+    assert_equal "hello world", o.read
+    assert_equal 0, $?.exitstatus
+  ensure
+    [i, o, e].each{ |io| io.close rescue nil }
+  end
+
   ##
   # Assertion Helpers
 

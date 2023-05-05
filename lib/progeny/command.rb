@@ -1,5 +1,3 @@
-require "open3"
-
 module Progeny
   # Progeny::Command includes logic for executing child processes and
   # reading/writing from their standard input, output, and error streams. It's
@@ -123,6 +121,41 @@ module Progeny
       new(*(args + [{ :noexec => true }.merge(options)]))
     end
 
+    # Spawn a child process with all standard IO streams piped in and out of
+    # the spawning process. Supports the standard `Process.spawn` interface.
+    #
+    # Returns a [pid, stdin, stdout, stderr] tuple, where pid is the new
+    # process's pid, stdin is a writeable IO object, and stdout / stderr are
+    # readable IO objects. The caller should take care to close all IO objects
+    # when finished and the child process's status must be collected by a call
+    # to Process::waitpid or equivalent.
+    def self.spawn_with_pipes(*argv)
+      if argv.last.is_a?(Hash)
+        opts = argv.pop.dup
+      else
+        opts = {}
+      end
+
+      ird, iwr = IO.pipe
+      ord, owr = IO.pipe
+      erd, ewr = IO.pipe
+
+      opts = opts.merge(
+          # redirect fds        # close other sides
+          :in  => ird,          iwr  => :close,
+          :out => owr,          ord  => :close,
+          :err => ewr,          erd  => :close
+        )
+      pid = spawn(*(argv + [opts]))
+      [pid, iwr, ord, erd]
+    ensure
+      # we're in the parent, close child-side fds
+      [ird, owr, ewr].each { |fd| fd.close if fd }
+    end
+
+    # All data written to the child process's stdin stream as a String.
+    attr_reader :input
+
     # All data written to the child process's stdout stream as a String.
     attr_reader :out
 
@@ -149,14 +182,14 @@ module Progeny
     # immediately when a new instance of this object is created, or
     # can be called explicitly when creating the Command via `build`.
     def exec!
-      stdin, stdout, stderr, wait_thread = Open3.popen3(@env, *(@argv + [@options]))
-      @pid = wait_thread[:pid]
+      pid, stdin, stdout, stderr = self.class.spawn_with_pipes(@env, *@argv, @options)
+      @pid = pid
 
       # async read from all streams into buffers
       read_and_write(@input, stdin, stdout, stderr, @timeout, @max)
 
-      # wait_thr.value waits for the termination of the process and returns exit status
-      @status = wait_thread.value
+      # wait for the termination of the process and return exit status
+      @status = waitpid(pid)
     rescue Object
       [stdin, stdout, stderr].each { |fd| fd.close rescue nil }
       if @status.nil?
@@ -165,7 +198,7 @@ module Progeny
         else
           ::Process.kill('-TERM', pid) rescue nil
         end
-        @status = wait_thread.value rescue nil
+        @status = waitpid(pid) rescue nil
       end
       raise
     ensure
@@ -267,6 +300,14 @@ module Progeny
       end
 
       [@out, @err]
+    end
+
+    # Wait for the child process to exit
+    #
+    # Returns the Process::Status object obtained by reaping the process.
+    def waitpid(pid)
+      Process::waitpid(pid)
+      $?
     end
   end
 end

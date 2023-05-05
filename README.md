@@ -12,10 +12,11 @@ strings and is therefore not well-suited to streaming large quantities of data
 in and out of commands. That said, it has some benefits:
 
  - **Simple** - requires little code for simple stream input and capture.
- - **Internally non-blocking** (using `select(2)`) - handles all pipe hang cases
-   due to exceeding `PIPE_BUF` limits on one or more streams.
- - **Uses Ruby under the hood** - It leverages Ruby's `Open3#popen3` and `Process.spawn`
-   behind the scenes so it's widely supported and consistently getting performance updates.
+ - **Internally non-blocking** (using `select(2)`) - handles all pipe hang
+   cases due to exceeding `PIPE_BUF` limits on one or more streams.
+ - **Uses Ruby under the hood** - It leverages Ruby's `Process.spawn` behind
+   the scenes so it's widely supported and consistently getting performance
+   updates.
 
 `Progeny::Command` takes the [standard `Process::spawn`
 arguments](https://ruby-doc.org/current/Process.html#method-c-spawn) when
@@ -132,10 +133,9 @@ end
 ```
 
 You will need to remove the include statements and replace any use of `#spawn`
-with Ruby's native `Process.spawn` and  `#popen4` with Open3's `#popen3`.
+with Ruby's native `Process.spawn` and  `#popen4` with `Progeny::Command.spawn_with_pipes`
 ```diff
 - require 'posix/spawn'
-+ require 'open3'
 
 class YourSpawnerClass
 - include POSIX::Spawn
@@ -148,16 +148,14 @@ class YourSpawnerClass
 
   def calculate(expression)
 -   pid, in, out, err = popen4('bc')
-+   in, out, err, wait_thr = Open3.popen3('bc')
-+   pid = wait_thr[:pid] # if pid is needed
++   pid, in, out, err = Progeny::Command.spawn_with_pipes('bc')
     in.write(expression)
     in.close
     out.read
   ensure
     [in, out, err].each { |io| io.close if !io.closed? }
--   Process::waitpid(pid)
--   $?
-+   wait_thr.value
+    Process::waitpid(pid)
+    $?
   end
 end
 ```
