@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Progeny
   # Progeny::Command includes logic for executing child processes and
   # reading/writing from their standard input, output, and error streams. It's
@@ -228,7 +229,7 @@ module Progeny
     #   exceeds the amount specified by the max argument.
     def read_and_write(input, stdin, stdout, stderr, timeout=nil, max=nil)
       max = nil if max && max <= 0
-      @out, @err = '', ''
+      @out, @err = +'', +''
 
       # force all string and IO encodings to BINARY under 1.9 for now
       if @out.respond_to?(:force_encoding) and stdin.respond_to?(:set_encoding)
