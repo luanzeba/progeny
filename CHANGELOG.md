@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.2.1] - 2024-05-16
+
+### Fixed
+
+- Use `frozen_string_literal`.
+
 ## [0.2.0] - 2023-05-05
 
 ### Added
